@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 280px;
+      padding: 15px;
+      background-color: #f9f9f9;
+    }
+
+    h3 {
+      color: #d9534f;
+      margin-bottom: 10px;
+    }
+
+    .file-name {
+      font-size: 14px;
+      margin: 10px 0;
+      word-wrap: break-word;
+      font-weight: bold;
+    }
+
+    .message {
+      font-size: 13px;
+      margin-bottom: 15px;
+      color: #555;
+    }
+
+    button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    #downloadBtn {
+      background-color: #5cb85c;
+      color: white;
+    }
+
+    #downloadBtn:hover {
+      background-color: #4cae4c;
+    }
+
+    #cancelBtn {
+      background-color: #d9534f;
+      color: white;
+    }
+
+    #cancelBtn:hover {
+      background-color: #c9302c;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <h3>⚠ Duplicate File Detected</h3>
+
+  <div class="file-name" id="fileName"></div>
+
+  <div class="message">
+    This file already exists in your system.<br>
+    What would you like to do?
+  </div>
+
+  <button id="downloadBtn">Download Anyway</button>
+  <button id="cancelBtn">Cancel Download</button>
+
+  <script src="popup.js"></script>
+
+</body>
+</html>
