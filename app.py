@@ -3,32 +3,47 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+
+# ==============================
+# 🔹 Load Environment Variables
+# ==============================
+
+load_dotenv()
+
+MONGO_URI = os.getenv("MONGO_URI")
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+collection = None
 
 # ==============================
 # 🔹 MongoDB Connection Section
 # ==============================
 
-try:
-    client = MongoClient(
-        "mongodb+srv://admin:PoorvajaMegha2023@dataalert.umzneoh.mongodb.net/?retryWrites=true&w=majority",
-        serverSelectionTimeoutMS=5000
-    )
+if not MONGO_URI:
+    print("❌ MONGO_URI not found in .env file")
+else:
+    try:
+        client = MongoClient(
+            MONGO_URI,
+            serverSelectionTimeoutMS=5000
+        )
 
-    # Force actual connection test
-    client.server_info()
+        # Force connection test
+        client.server_info()
 
-    print("✅ MongoDB Connected Successfully!")
+        print("✅ MongoDB Connected Successfully!")
 
-    db = client["datadup_db"]
-    collection = db["files"]
+        db = client["datadup_db"]
+        collection = db["files"]
 
-except ConnectionFailure as e:
-    print("❌ MongoDB Connection Failed!")
-    print(e)
-    collection = None
+    except ConnectionFailure as e:
+        print("❌ MongoDB Connection Failed!")
+        print(e)
+        collection = None
 
 
 # ==============================
@@ -47,7 +62,7 @@ def check_duplicate():
         return jsonify({
             "duplicate": False,
             "error": "Database not connected"
-        })
+        }), 500
 
     try:
         data = request.json
@@ -61,7 +76,7 @@ def check_duplicate():
                 "error": "Invalid data"
             }), 400
 
-        # 🔹 Duplicate check ONLY by filename
+        # 🔹 Duplicate check by filename
         existing_file = collection.find_one({
             "filename": filename
         })
@@ -93,4 +108,4 @@ def check_duplicate():
 # ==============================
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
