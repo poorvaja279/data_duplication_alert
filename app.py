@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from datetime import datetime
 from dotenv import load_dotenv
+import hashlib
 import os
 
 # ==============================
@@ -47,6 +48,20 @@ else:
 
 
 # ==============================
+# 🔹 Helper Function: SHA256 Hash
+# ==============================
+
+def generate_hash(file_path):
+    hasher = hashlib.sha256()
+
+    with open(file_path, "rb") as f:
+        while chunk := f.read(4096):
+            hasher.update(chunk)
+
+    return hasher.hexdigest()
+
+
+# ==============================
 # 🔹 Routes
 # ==============================
 
@@ -54,6 +69,10 @@ else:
 def home():
     return "Backend is running"
 
+
+# ---------------------------------
+# 🔹 Basic Metadata Duplicate Check
+# ---------------------------------
 
 @app.route("/check", methods=["POST"])
 def check_duplicate():
@@ -76,27 +95,81 @@ def check_duplicate():
                 "error": "Invalid data"
             }), 400
 
-        # 🔹 Duplicate check by filename
         existing_file = collection.find_one({
             "filename": filename
         })
 
         if existing_file:
-            print("⚠ Duplicate detected:", filename)
+            print("⚠ Duplicate detected (metadata):", filename)
             return jsonify({"duplicate": True})
 
-        # 🔹 Store new file record
         collection.insert_one({
             "filename": filename,
             "url": url,
             "timestamp": datetime.utcnow()
         })
 
-        print("✅ File stored:", filename)
+        print("✅ File stored (metadata):", filename)
         return jsonify({"duplicate": False})
 
     except Exception as e:
         print("❌ Error in /check:", e)
+        return jsonify({
+            "duplicate": False,
+            "error": "Server error"
+        }), 500
+
+
+# ---------------------------------
+# 🔹 Content-Based Hash Duplicate Check
+# ---------------------------------
+
+@app.route("/hash_check", methods=["POST"])
+def hash_check():
+
+    if collection is None:
+        return jsonify({
+            "duplicate": False,
+            "error": "Database not connected"
+        }), 500
+
+    try:
+        data = request.json
+        file_path = data.get("file_path")
+
+        if not file_path:
+            return jsonify({
+                "duplicate": False,
+                "error": "File path missing"
+            }), 400
+
+        if not os.path.exists(file_path):
+            return jsonify({
+                "duplicate": False,
+                "error": "File does not exist"
+            }), 400
+
+        file_hash = generate_hash(file_path)
+
+        existing_file = collection.find_one({
+            "hash": file_hash
+        })
+
+        if existing_file:
+            print("⚠ Duplicate detected (hash):", file_path)
+            return jsonify({"duplicate": True})
+
+        collection.insert_one({
+            "hash": file_hash,
+            "file_path": file_path,
+            "timestamp": datetime.utcnow()
+        })
+
+        print("✅ File stored (hash):", file_path)
+        return jsonify({"duplicate": False})
+
+    except Exception as e:
+        print("❌ Error in /hash_check:", e)
         return jsonify({
             "duplicate": False,
             "error": "Server error"
